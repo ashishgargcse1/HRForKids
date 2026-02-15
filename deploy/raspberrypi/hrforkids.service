@@ -1,0 +1,16 @@
+[Unit]
+Description=HR for Kids FastAPI Service
+After=network.target
+
+[Service]
+Type=simple
+User=hrforkids
+Group=hrforkids
+WorkingDirectory=/opt/hrforkids
+EnvironmentFile=/etc/hrforkids/hrforkids.env
+ExecStart=/opt/hrforkids/.venv/bin/uvicorn app.main:app --host 0.0.0.0 --port ${APP_PORT}
+Restart=on-failure
+RestartSec=3
+
+[Install]
+WantedBy=multi-user.target

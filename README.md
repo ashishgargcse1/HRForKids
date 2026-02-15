@@ -87,3 +87,66 @@ export APP_DB_PATH=./data/app.db
 export APP_SECRET=local-dev-secret
 uvicorn app.main:app --host 0.0.0.0 --port 8080
 ```
+
+## Raspberry Pi (Standalone Linux Service)
+This repository now includes native Raspberry Pi deployment scripts (no Docker required).
+
+### Build Deployable Archive (from this machine)
+```bash
+bash scripts/package_rpi.sh
+```
+This creates `dist/hrforkids-rpi-<timestamp>.tar.gz`.
+
+### Install on Raspberry Pi
+1. Copy the archive to the Pi:
+```bash
+scp dist/hrforkids-rpi-<timestamp>.tar.gz pi@<pi-ip>:/tmp/
+```
+2. SSH into the Pi and install:
+```bash
+ssh pi@<pi-ip>
+sudo mkdir -p /opt/hrforkids-src
+sudo tar -xzf /tmp/hrforkids-rpi-<timestamp>.tar.gz -C /opt/hrforkids-src
+cd /opt/hrforkids-src/hrforkids-rpi
+sudo bash deploy/raspberrypi/install.sh
+```
+
+### Service Management on Pi
+- Service name: `hrforkids`
+- Environment file: `/etc/hrforkids/hrforkids.env`
+- Data file: `/var/lib/hrforkids/app.db`
+
+Commands:
+```bash
+sudo systemctl status hrforkids
+sudo systemctl restart hrforkids
+sudo journalctl -u hrforkids -f
+```
+
+After install, update `/etc/hrforkids/hrforkids.env` with a strong `APP_SECRET` and restart:
+```bash
+sudo systemctl restart hrforkids
+```
+
+### Install Directly From GitHub (recommended once pushed)
+On Raspberry Pi:
+```bash
+sudo apt-get update
+sudo apt-get install -y git
+git clone https://github.com/ashishgargcse1/HRForKids.git
+cd HRForKids
+sudo bash deploy/raspberrypi/install.sh
+```
+
+### Uninstall From Raspberry Pi
+Keep data (`/var/lib/hrforkids/app.db`):
+```bash
+cd /opt/hrforkids
+sudo bash deploy/raspberrypi/uninstall.sh
+```
+
+Remove data too:
+```bash
+cd /opt/hrforkids
+sudo bash deploy/raspberrypi/uninstall.sh --delete-data
+```
