@@ -114,6 +114,27 @@ def _error_response(request: Request, e: AppError):
     raise HTTPException(status_code=e.status_code, detail=e.message)
 
 
+def _parse_int(value: Any, field_name: str) -> int:
+    try:
+        return int(value)
+    except (TypeError, ValueError):
+        raise AppError(f"{field_name} must be an integer", 400)
+
+
+def _parse_int_list(values: Any, field_name: str) -> list[int]:
+    if isinstance(values, str):
+        raw_items = [v for v in values.split(",") if v.strip()]
+    elif isinstance(values, list):
+        raw_items = values
+    else:
+        raise AppError(f"{field_name} must be a list of integers", 400)
+
+    out: list[int] = []
+    for v in raw_items:
+        out.append(_parse_int(v, field_name))
+    return out
+
+
 def _require_roles(request: Request, roles: set[str]):
     user = _require_login(request)
     if user["role"] not in roles:
@@ -191,7 +212,7 @@ async def web_change_password(
     old_password: str = Form(...),
     new_password: str = Form(...),
 ):
-    user = require_login(request)
+    user = _require_login(request)
     conn = request.state.conn
     try:
         change_password(conn, user["id"], old_password, new_password)
@@ -529,17 +550,15 @@ async def api_chores_create(request: Request):
     user = _require_roles(request, {ROLE_PARENT, ROLE_ADMIN})
     conn = request.state.conn
     data = await _body(request)
-    assignee_ids = data.get("assignee_ids", [])
-    if isinstance(assignee_ids, str):
-        assignee_ids = [int(x) for x in assignee_ids.split(",") if x]
     try:
+        assignee_ids = _parse_int_list(data.get("assignee_ids", []), "assignee_ids")
         chore = create_chore(
             conn,
             user,
             data.get("title", ""),
             data.get("description", ""),
-            int(data.get("points", 0)),
-            [int(x) for x in assignee_ids],
+            _parse_int(data.get("points", 0), "points"),
+            assignee_ids,
             data.get("recurrence", "NONE"),
             data.get("due_date") or None,
         )
@@ -615,9 +634,11 @@ async def api_rewards_create(request: Request):
             conn,
             user,
             data.get("name", ""),
-            int(data.get("cost", 0)),
+            _parse_int(data.get("cost", 0), "cost"),
             is_active,
-            int(data["limit_per_week"]) if data.get("limit_per_week") not in (None, "") else None,
+            _parse_int(data["limit_per_week"], "limit_per_week")
+            if data.get("limit_per_week") not in (None, "")
+            else None,
         )
     except AppError as e:
         return _error_response(request, e)

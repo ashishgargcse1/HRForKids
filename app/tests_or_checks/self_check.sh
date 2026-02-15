@@ -3,6 +3,9 @@ set -euo pipefail
 
 BASE_URL="${1:-http://localhost:8080}"
 COOKIE="/tmp/chorequest-cookie.txt"
+SUFFIX="$(date +%s)$RANDOM"
+PARENT_USER="parent_${SUFFIX}"
+CHILD_USER="child_${SUFFIX}"
 
 echo "[1] Health check"
 curl -sS "$BASE_URL/health" | grep -q '"ok":true\|"ok": true'
@@ -20,10 +23,10 @@ grep -q '"username":"admin"\|"username": "admin"' /tmp/chq_me.json
 
 echo "[4] Create parent and child"
 curl -sS -b "$COOKIE" -H 'Content-Type: application/json' \
-  -d '{"username":"parent1","display_name":"Parent One","role":"PARENT","password":"parent123","avatar":"🧑"}' \
+  -d "{\"username\":\"${PARENT_USER}\",\"display_name\":\"Parent One\",\"role\":\"PARENT\",\"password\":\"parent123\",\"avatar\":\"🧑\"}" \
   "$BASE_URL/api/users" >/tmp/chq_parent.json
 curl -sS -b "$COOKIE" -H 'Content-Type: application/json' \
-  -d '{"username":"child1","display_name":"Child One","role":"CHILD","password":"child123","avatar":"🧒"}' \
+  -d "{\"username\":\"${CHILD_USER}\",\"display_name\":\"Child One\",\"role\":\"CHILD\",\"password\":\"child123\",\"avatar\":\"🧒\"}" \
   "$BASE_URL/api/users" >/tmp/chq_child.json
 
 grep -q '"role":"PARENT"\|"role": "PARENT"' /tmp/chq_parent.json

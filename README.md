@@ -138,6 +138,19 @@ cd HRForKids
 sudo bash deploy/raspberrypi/install.sh
 ```
 
+Default first login after a fresh install:
+- Username: `admin`
+- Password: `admin123`
+
+Change the admin password immediately after login.
+
+Seeded demo users in the default DB:
+- Parent: `parent1` / `parent123`
+- Child: `child1` / `child123`
+- Child: `child2` / `child234`
+
+These users are included to pre-assign starter chores in a fresh install. Change all default passwords.
+
 ### Uninstall From Raspberry Pi
 Keep data (`/var/lib/hrforkids/app.db`):
 ```bash
@@ -150,3 +163,16 @@ Remove data too:
 cd /opt/hrforkids
 sudo bash deploy/raspberrypi/uninstall.sh --delete-data
 ```
+
+## Seeded Defaults (Research-Based)
+The packaged default database includes starter chores and rewards based on common examples in pediatric/family guidance:
+- Common chores by age and family routines:
+  - https://www.webmd.com/parenting/kids-chores
+  - https://www.sharp.com/health-news/age-appropriate-chores-for-kids
+- Reward systems and practical rewards:
+  - https://www.cdc.gov/parents/essentials/consequences/rewards.html
+  - https://www.verywellfamily.com/reward-ideas-for-kids-1094894
+
+Recurring chore visibility rule:
+- Recurring chores (`DAILY`, `WEEKLY`) are created immediately after approval, but remain hidden until their `due_date`.
+- This prevents the same recurring chore from reappearing multiple times in one day.

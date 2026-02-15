@@ -7,6 +7,7 @@ APP_DIR="/opt/hrforkids"
 DATA_DIR="/var/lib/hrforkids"
 ENV_DIR="/etc/hrforkids"
 SERVICE_NAME="hrforkids"
+SEED_DB_REL="deploy/raspberrypi/default_app.db"
 
 if [[ "${EUID}" -ne 0 ]]; then
   echo "Run as root: sudo bash deploy/raspberrypi/install.sh" >&2
@@ -45,6 +46,12 @@ rsync -a --delete \
 python3 -m venv "${APP_DIR}/.venv"
 "${APP_DIR}/.venv/bin/pip" install --upgrade pip
 "${APP_DIR}/.venv/bin/pip" install -r "${APP_DIR}/app/requirements.txt"
+
+if [[ ! -f "${DATA_DIR}/app.db" ]]; then
+  if [[ -f "${APP_DIR}/${SEED_DB_REL}" ]]; then
+    install -m 0640 -o "${APP_USER}" -g "${APP_GROUP}" "${APP_DIR}/${SEED_DB_REL}" "${DATA_DIR}/app.db"
+  fi
+fi
 
 if [[ ! -f "${ENV_DIR}/hrforkids.env" ]]; then
   install -m 0640 -o root -g "${APP_GROUP}" \

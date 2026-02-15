@@ -248,6 +248,10 @@ def list_chores(
         where.append("ca.user_id = ?")
         params.append(actor["id"])
 
+    # Future recurring chores should only appear on/after due_date.
+    where.append("NOT (c.status = 'ASSIGNED' AND c.due_date IS NOT NULL AND c.due_date > ?)")
+    params.append(datetime.now(timezone.utc).date().isoformat())
+
     rows = conn.execute(
         f"""
         SELECT DISTINCT c.*
@@ -274,6 +278,10 @@ def mark_chore_done(conn: sqlite3.Connection, actor: dict[str, Any], chore_id: i
     assignee_ids = [a["id"] for a in chore["assignees"]]
     if actor["id"] not in assignee_ids:
         raise AppError("Not assigned to this chore", 403)
+    if chore["due_date"]:
+        today = datetime.now(timezone.utc).date().isoformat()
+        if chore["due_date"] > today:
+            raise AppError("Chore is not available yet", 400)
     if chore["status"] not in {"ASSIGNED", "REJECTED"}:
         raise AppError("Chore cannot be marked done now", 400)
 
@@ -300,14 +308,22 @@ def _pending_actor_for_chore(conn: sqlite3.Connection, chore_id: int) -> int | N
 
 
 def _next_due_date(current: str | None, recurrence: str) -> str | None:
-    if not current:
-        return None
-    d = datetime.strptime(current, "%Y-%m-%d").date()
+    if recurrence not in {"DAILY", "WEEKLY"}:
+        return current
+    today = datetime.now(timezone.utc).date()
+    base = today
+    if current:
+        try:
+            parsed = datetime.strptime(current, "%Y-%m-%d").date()
+            if parsed > base:
+                base = parsed
+        except ValueError:
+            base = today
     if recurrence == "DAILY":
-        return (d + timedelta(days=1)).isoformat()
+        return (base + timedelta(days=1)).isoformat()
     if recurrence == "WEEKLY":
-        return (d + timedelta(weeks=1)).isoformat()
-    return current
+        return (base + timedelta(weeks=1)).isoformat()
+    return None
 
 
 def _create_next_recurrence(conn: sqlite3.Connection, chore: dict[str, Any]) -> None:

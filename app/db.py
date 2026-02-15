@@ -8,6 +8,55 @@ from passlib.context import CryptContext
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 
+DEFAULT_USERS = [
+    {
+        "username": "parent1",
+        "display_name": "Parent One",
+        "role": "PARENT",
+        "password": "parent123",
+        "avatar": "🧑",
+        "must_change_password": 1,
+    },
+    {
+        "username": "child1",
+        "display_name": "Child One",
+        "role": "CHILD",
+        "password": "child123",
+        "avatar": "🧒",
+        "must_change_password": 1,
+    },
+    {
+        "username": "child2",
+        "display_name": "Child Two",
+        "role": "CHILD",
+        "password": "child234",
+        "avatar": "👧",
+        "must_change_password": 1,
+    },
+]
+
+# Seeded from common examples in family chore/reward guides (see README).
+DEFAULT_REWARDS = [
+    {"name": "Extra 20 mins screen time", "cost": 25, "limit_per_week": 3},
+    {"name": "Pick the family movie", "cost": 40, "limit_per_week": 1},
+    {"name": "Choose dinner menu", "cost": 45, "limit_per_week": 1},
+    {"name": "Small toy or sticker", "cost": 60, "limit_per_week": 1},
+    {"name": "Trip to the park", "cost": 70, "limit_per_week": 1},
+    {"name": "Ice cream treat", "cost": 80, "limit_per_week": 1},
+]
+
+DEFAULT_CHORES = [
+    {"title": "Make bed", "description": "Straighten sheets and pillow.", "points": 10, "recurrence": "DAILY"},
+    {"title": "Brush teeth (night)", "description": "Brush for 2 minutes before bed.", "points": 8, "recurrence": "DAILY"},
+    {"title": "Put dirty clothes in hamper", "description": "No clothes left on floor.", "points": 8, "recurrence": "DAILY"},
+    {"title": "Tidy toys/books", "description": "Quick room reset in evening.", "points": 12, "recurrence": "DAILY"},
+    {"title": "Set the dinner table", "description": "Put plates, forks, spoons, and cups.", "points": 12, "recurrence": "DAILY"},
+    {"title": "Feed the pet", "description": "Use correct food and portion.", "points": 15, "recurrence": "DAILY"},
+    {"title": "Water plants", "description": "Water indoor plants carefully.", "points": 10, "recurrence": "WEEKLY"},
+    {"title": "Help sort laundry", "description": "Separate lights and darks.", "points": 14, "recurrence": "WEEKLY"},
+    {"title": "Take out trash/recycling", "description": "Help with bins on collection day.", "points": 15, "recurrence": "WEEKLY"},
+]
+
 
 def now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
@@ -23,6 +72,73 @@ def connect(db_path: str | None = None) -> sqlite3.Connection:
     conn.row_factory = sqlite3.Row
     conn.execute("PRAGMA foreign_keys = ON")
     return conn
+
+
+def _seed_default_content(cur: sqlite3.Cursor, admin_id: int) -> None:
+    created_at = now_iso()
+
+    user_ids: dict[str, int] = {}
+    for user in DEFAULT_USERS:
+        row = cur.execute("SELECT id FROM users WHERE username = ?", (user["username"],)).fetchone()
+        if row:
+            user_ids[user["username"]] = int(row["id"])
+            continue
+        cur.execute(
+            """
+            INSERT INTO users (username, display_name, role, password_hash, avatar, is_active, must_change_password, created_at)
+            VALUES (?, ?, ?, ?, ?, 1, ?, ?)
+            """,
+            (
+                user["username"],
+                user["display_name"],
+                user["role"],
+                pwd_context.hash(user["password"]),
+                user["avatar"],
+                user["must_change_password"],
+                created_at,
+            ),
+        )
+        user_ids[user["username"]] = int(cur.lastrowid)
+
+    for reward in DEFAULT_REWARDS:
+        cur.execute(
+            """
+            INSERT INTO rewards (name, cost, is_active, limit_per_week, created_by, created_at)
+            VALUES (?, ?, 1, ?, ?, ?)
+            """,
+            (reward["name"], reward["cost"], reward["limit_per_week"], admin_id, created_at),
+        )
+
+    child_targets = [uid for uname, uid in user_ids.items() if uname.startswith("child")]
+    if not child_targets:
+        return
+    due_today = datetime.now(timezone.utc).date().isoformat()
+    for idx, chore in enumerate(DEFAULT_CHORES):
+        cur.execute(
+            """
+            INSERT INTO chores (title, description, points, recurrence, due_date, status, created_by, created_at)
+            VALUES (?, ?, ?, ?, ?, 'ASSIGNED', ?, ?)
+            """,
+            (
+                chore["title"],
+                chore["description"],
+                chore["points"],
+                chore["recurrence"],
+                due_today,
+                admin_id,
+                created_at,
+            ),
+        )
+        chore_id = int(cur.lastrowid)
+        assigned_child = child_targets[idx % len(child_targets)]
+        cur.execute("INSERT INTO chore_assignments (chore_id, user_id) VALUES (?, ?)", (chore_id, assigned_child))
+        cur.execute(
+            """
+            INSERT INTO chore_events (chore_id, from_status, to_status, actor_user_id, note, created_at)
+            VALUES (?, NULL, 'ASSIGNED', ?, 'Seeded default chore', ?)
+            """,
+            (chore_id, admin_id, created_at),
+        )
 
 
 def init_db(db_path: str | None = None) -> None:
@@ -130,6 +246,8 @@ def init_db(db_path: str | None = None) -> None:
             """,
             ("admin", "Admin", admin_hash, "🛡️", now_iso()),
         )
+        admin_id = int(cur.lastrowid)
+        _seed_default_content(cur, admin_id)
         print("WARNING: Created default admin user admin/admin123. Change password immediately.")
 
     conn.commit()
