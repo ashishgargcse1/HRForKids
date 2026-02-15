@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Login - Healthy Routine for Kids</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body class="login-bg">
+  <main class="login-card">
+    <h1>🎮 Healthy Routine for Kids</h1>
+    <p class="muted">Family chores, points, and rewards.</p>
+    {% if error %}<div class="alert">{{ error }}</div>{% endif %}
+    <form method="post" action="/login" class="stack">
+      <label>Username<input name="username" required /></label>
+      <label>Password<input type="password" name="password" required /></label>
+      <button class="btn large" type="submit">Login</button>
+    </form>
+  </main>
+</body>
+</html>

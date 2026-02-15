@@ -1,0 +1,53 @@
+{% extends "base.html" %}
+{% block content %}
+{% if is_parent or is_admin %}
+<section class="card">
+  <h2>Create Chore</h2>
+  <form method="post" action="/chores/create" class="grid two">
+    <label>Title<input name="title" required /></label>
+    <label>Points<input name="points" type="number" min="0" required /></label>
+    <label>Description<input name="description" /></label>
+    <label>Due Date<input name="due_date" type="date" /></label>
+    <label>Recurrence
+      <select name="recurrence">
+        <option value="NONE">NONE</option>
+        <option value="DAILY">DAILY</option>
+        <option value="WEEKLY">WEEKLY</option>
+      </select>
+    </label>
+    <label>Assign to CHILD users
+      <select name="assignee_ids" multiple size="4" required>
+        {% for child in children %}
+        <option value="{{ child.id }}">{{ child.avatar }} {{ child.display_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn" type="submit">Create Chore</button>
+  </form>
+</section>
+{% endif %}
+
+<section class="card">
+  <h2>Chores</h2>
+  <div class="row">
+    <a class="btn alt" href="/chores">All</a>
+    <a class="btn alt" href="/chores?status=ASSIGNED">Assigned</a>
+    <a class="btn alt" href="/chores?status=DONE_PENDING">Pending</a>
+    <a class="btn alt" href="/chores?status=APPROVED">Approved</a>
+    <a class="btn alt" href="/chores?status=REJECTED">Rejected</a>
+  </div>
+  <div class="list">
+    {% for c in chores %}
+    <div class="list-item">
+      <a href="/chores/{{ c.id }}">{{ c.title }} ({{ c.points }} pts)</a>
+      <span class="pill">{{ c.status }}</span>
+      {% if is_child and (c.status == 'ASSIGNED' or c.status == 'REJECTED') %}
+      <form method="post" action="/chores/{{ c.id }}/done" class="inline"><button class="btn">Mark Done</button></form>
+      {% endif %}
+    </div>
+    {% else %}
+    <p>No chores found.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

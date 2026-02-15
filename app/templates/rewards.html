@@ -1,0 +1,59 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid two">
+  <article class="card">
+    <h2>Rewards Catalog</h2>
+    {% if is_child %}<p>Your points: <strong>{{ points }}</strong></p>{% endif %}
+    <div class="list">
+    {% for r in rewards %}
+      <div class="list-item">
+        <span>{{ r.name }} - {{ r.cost }} pts {% if not r.is_active %}(inactive){% endif %}</span>
+        {% if is_child and r.is_active %}
+          <form method="post" action="/rewards/{{ r.id }}/redeem" class="inline"><button class="btn">Redeem</button></form>
+        {% endif %}
+      </div>
+    {% else %}
+      <p>No rewards found.</p>
+    {% endfor %}
+    </div>
+  </article>
+
+  <article class="card">
+    {% if is_parent or is_admin %}
+    <h3>Create Reward</h3>
+    <form method="post" action="/rewards/create" class="stack">
+      <label>Name<input name="name" required /></label>
+      <label>Cost<input name="cost" type="number" min="0" required /></label>
+      <label>Limit per week<input name="limit_per_week" type="number" min="1" /></label>
+      <label>Active
+        <select name="is_active"><option value="1">Yes</option><option value="0">No</option></select>
+      </label>
+      <button class="btn">Create Reward</button>
+    </form>
+    {% endif %}
+  </article>
+</section>
+
+<section class="card">
+  <h3>Redemption Requests</h3>
+  <table class="table">
+    <tr><th>ID</th><th>User</th><th>Reward</th><th>Status</th><th>Actions</th></tr>
+    {% for rd in redemptions %}
+    <tr>
+      <td>{{ rd.id }}</td>
+      <td>{{ rd.user_name }}</td>
+      <td>{{ rd.reward_name }} ({{ rd.reward_cost }} pts)</td>
+      <td>{{ rd.status }}</td>
+      <td>
+        {% if (is_parent or is_admin) and rd.status == 'REQUESTED' %}
+        <form method="post" action="/redemptions/{{ rd.id }}/approve" class="inline"><button class="btn">Approve</button></form>
+        <form method="post" action="/redemptions/{{ rd.id }}/deny" class="inline"><button class="btn danger">Deny</button></form>
+        {% else %}
+        -
+        {% endif %}
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

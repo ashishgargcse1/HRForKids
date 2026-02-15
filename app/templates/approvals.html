@@ -1,0 +1,28 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Approvals Queue</h2>
+  <div class="list">
+  {% for c in queue %}
+    <div class="list-item">
+      <div>
+        <strong>{{ c.title }}</strong> ({{ c.points }} pts)
+        <div class="muted">Chore #{{ c.id }}</div>
+      </div>
+      <div class="row">
+        <form method="post" action="/chores/{{ c.id }}/approve" class="inline">
+          <input name="note" placeholder="optional note" />
+          <button class="btn">Approve</button>
+        </form>
+        <form method="post" action="/chores/{{ c.id }}/reject" class="inline">
+          <input name="note" placeholder="reason" />
+          <button class="btn danger">Reject</button>
+        </form>
+      </div>
+    </div>
+  {% else %}
+    <p>No chores waiting for approval.</p>
+  {% endfor %}
+  </div>
+</section>
+{% endblock %}

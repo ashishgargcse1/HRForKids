@@ -1,0 +1,32 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>Points Ledger</h2>
+  <p>Total points: <strong>{{ total }}</strong></p>
+  {% if is_parent or is_admin %}
+  <form method="get" action="/ledger" class="row">
+    <label>Child
+      <select name="user_id">
+        {% for c in child_users %}
+        <option value="{{ c.id }}" {% if c.id == target_user_id %}selected{% endif %}>{{ c.avatar }} {{ c.display_name }}</option>
+        {% endfor %}
+      </select>
+    </label>
+    <button class="btn">View</button>
+  </form>
+  {% endif %}
+  <table class="table">
+    <tr><th>Time</th><th>Delta</th><th>Reason</th><th>Ref</th></tr>
+    {% for e in entries %}
+    <tr>
+      <td>{{ e.created_at }}</td>
+      <td>{{ e.delta }}</td>
+      <td>{{ e.reason }}</td>
+      <td>{{ e.ref_type }} #{{ e.ref_id }}</td>
+    </tr>
+    {% else %}
+    <tr><td colspan="4">No entries yet.</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

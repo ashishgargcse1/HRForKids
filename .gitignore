@@ -1,0 +1,10 @@
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Local runtime DB files
+data/*.db
+data/*.sqlite
+data/*.sqlite3

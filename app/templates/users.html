@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>User Management</h2>
+  <form method="post" action="/users/create" class="grid two">
+    <label>Username<input name="username" required /></label>
+    <label>Display Name<input name="display_name" required /></label>
+    <label>Role
+      <select name="role">
+        <option>ADMIN</option>
+        <option>PARENT</option>
+        <option selected>CHILD</option>
+      </select>
+    </label>
+    <label>Password<input name="password" required /></label>
+    <label>Avatar Emoji<input name="avatar" value="🙂" /></label>
+    <button class="btn" type="submit">Create User</button>
+  </form>
+</section>
+
+<section class="card">
+  <h3>All Users</h3>
+  <table class="table">
+    <tr><th>ID</th><th>User</th><th>Role</th><th>Active</th><th>Actions</th></tr>
+    {% for u in users %}
+    <tr>
+      <td>{{ u.id }}</td>
+      <td>{{ u.avatar }} {{ u.display_name }} ({{ u.username }})</td>
+      <td>{{ u.role }}</td>
+      <td>{{ "Yes" if u.is_active else "No" }}</td>
+      <td>
+        <form method="post" action="/users/{{ u.id }}/toggle" class="inline"><button class="btn small">Toggle Active</button></form>
+        <form method="post" action="/users/{{ u.id }}/role" class="inline">
+          <select name="role"><option>ADMIN</option><option>PARENT</option><option>CHILD</option></select>
+          <button class="btn small">Update Role</button>
+        </form>
+        <form method="post" action="/users/{{ u.id }}/reset-password" class="inline">
+          <input name="new_password" placeholder="new password" required />
+          <button class="btn small">Reset Password</button>
+        </form>
+      </td>
+    </tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

@@ -1,0 +1,34 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid two">
+  <article class="card big">
+    <h2>Hi {{ user.display_name }} {{ user.avatar }}</h2>
+    <p><strong>{{ points }}</strong> points</p>
+    <div class="progress"><span style="width: {{ [points, 100]|min }}%"></span></div>
+    <p>Pending approvals: {{ pending_count }}</p>
+  </article>
+  <article class="card">
+    <h3>Rewards Shop 🛍️</h3>
+    {% for r in rewards %}
+      <div class="row"><span>{{ r.name }} ({{ r.cost }} pts)</span></div>
+    {% else %}
+      <p class="muted">No active rewards yet.</p>
+    {% endfor %}
+    <a class="btn" href="/rewards">Open Rewards</a>
+  </article>
+</section>
+
+<section class="card">
+  <h3>Today's Chores</h3>
+  <div class="list">
+    {% for c in chores %}
+    <a class="list-item" href="/chores/{{ c.id }}">
+      <span>✅ {{ c.title }}</span>
+      <span class="pill">{{ c.status }}</span>
+    </a>
+    {% else %}
+    <p>No chores assigned.</p>
+    {% endfor %}
+  </div>
+</section>
+{% endblock %}

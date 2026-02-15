@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="card">
+  <h2>{{ chore.title }} ({{ chore.points }} pts)</h2>
+  <p>{{ chore.description or "No description" }}</p>
+  <p>Status: <span class="pill">{{ chore.status }}</span></p>
+  <p>Recurrence: {{ chore.recurrence }} | Due: {{ chore.due_date or "None" }}</p>
+  <p>Assignees:
+    {% for a in chore.assignees %}
+      {{ a.avatar }} {{ a.display_name }}
+    {% endfor %}
+  </p>
+</section>
+
+<section class="card">
+  <h3>Status History</h3>
+  <table class="table">
+    <tr><th>Time</th><th>From</th><th>To</th><th>By</th><th>Note</th></tr>
+    {% for e in chore.events %}
+    <tr><td>{{ e.created_at }}</td><td>{{ e.from_status or "-" }}</td><td>{{ e.to_status }}</td><td>{{ e.actor_name }}</td><td>{{ e.note or "" }}</td></tr>
+    {% endfor %}
+  </table>
+</section>
+{% endblock %}

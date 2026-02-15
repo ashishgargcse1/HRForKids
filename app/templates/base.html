@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>{{ title or "Healthy Routine for Kids" }}</title>
+  <link rel="stylesheet" href="/static/styles.css" />
+</head>
+<body>
+  <header class="topbar">
+    <div class="brand">🏆 Healthy Routine for Kids</div>
+    {% if user %}
+    <nav class="navlinks">
+      <a href="/dashboard">Dashboard</a>
+      <a href="/chores">Chores</a>
+      <a href="/rewards">Rewards</a>
+      <a href="/ledger">Ledger</a>
+      {% if is_admin %}<a href="/users">Users</a>{% endif %}
+      {% if is_admin or is_parent %}<a href="/approvals">Approvals</a>{% endif %}
+    </nav>
+    <form method="post" action="/logout"><button class="btn danger">Logout</button></form>
+    {% endif %}
+  </header>
+
+  <main class="container">
+    {% if request.query_params.get('error') %}
+      <div class="alert">{{ request.query_params.get('error') }}</div>
+    {% endif %}
+    {% if user and user.must_change_password %}
+      <section class="card">
+        <h3>Security: Change Password Required</h3>
+        <form method="post" action="/me/change-password" class="grid two">
+          <label>Old Password<input type="password" name="old_password" required /></label>
+          <label>New Password<input type="password" name="new_password" required /></label>
+          <button class="btn" type="submit">Update Password</button>
+        </form>
+      </section>
+    {% endif %}
+    {% block content %}{% endblock %}
+  </main>
+
+  <footer class="site-footer">© Bridgemarkllc</footer>
+
+  <script src="/static/app.js"></script>
+  {% if request.query_params.get('confetti') == '1' %}
+    <script>launchConfetti();</script>
+  {% endif %}
+</body>
+</html>

@@ -1,0 +1,20 @@
+{% extends "base.html" %}
+{% block content %}
+<section class="grid two">
+  <article class="card big">
+    <h2>Family Overview 👨‍👩‍👧‍👦</h2>
+    {% for cp in child_points %}
+      <div class="row"><span>{{ cp.user.avatar }} {{ cp.user.display_name }}</span><strong>{{ cp.points }} pts</strong></div>
+    {% else %}
+      <p class="muted">No child users yet.</p>
+    {% endfor %}
+  </article>
+  <article class="card">
+    <h3>Approvals Queue</h3>
+    <p>{{ pending|length }} chores waiting</p>
+    <a class="btn" href="/approvals">Review Approvals</a>
+    <a class="btn alt" href="/chores">Create Chore</a>
+    <a class="btn alt" href="/rewards">Manage Rewards</a>
+  </article>
+</section>
+{% endblock %}
