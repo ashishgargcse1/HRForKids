@@ -18,6 +18,7 @@
   let pendingChores = [];
   let users = [];
   let children = [];
+  let selectedLedgerUser = '';
 
   let loginUsername = '';
   let loginPassword = '';
@@ -50,6 +51,31 @@
     }
   }
 
+  async function refreshLedger() {
+    if (!user) return;
+
+    if (user.role === 'CHILD') {
+      const ledgerData = await api('/api/ledger');
+      ledger = ledgerData.entries;
+      ledgerTotal = ledgerData.total;
+      return;
+    }
+
+    if (!selectedLedgerUser && children.length > 0) {
+      selectedLedgerUser = String(children[0].id);
+    }
+
+    if (!selectedLedgerUser) {
+      ledger = [];
+      ledgerTotal = 0;
+      return;
+    }
+
+    const ledgerData = await api(`/api/ledger?user_id=${selectedLedgerUser}`);
+    ledger = ledgerData.entries;
+    ledgerTotal = ledgerData.total;
+  }
+
   async function loadData() {
     if (!user) return;
     error = '';
@@ -60,10 +86,6 @@
         api('/api/redemptions')
       ]);
 
-      const ledgerData = await api('/api/ledger');
-      ledger = ledgerData.entries;
-      ledgerTotal = ledgerData.total;
-
       if (user.role === 'ADMIN') {
         users = await api('/api/users');
       }
@@ -72,6 +94,8 @@
         children = await api('/api/children');
         pendingChores = await api('/api/chores?status=DONE_PENDING');
       }
+
+      await refreshLedger();
     } catch (e) {
       error = e.message;
     }
@@ -101,6 +125,7 @@
     pendingChores = [];
     users = [];
     children = [];
+    selectedLedgerUser = '';
   }
 
   async function createChore() {
@@ -175,17 +200,23 @@
   onMount(bootstrap);
 </script>
 
+<div class="scene-bg" aria-hidden="true">
+  <div class="blob one"></div>
+  <div class="blob two"></div>
+  <div class="blob three"></div>
+</div>
+
 {#if loading}
   <main class="shell"><p>Loading...</p></main>
 {:else if !user}
   <main class="shell auth">
     <img class="hero sticker-float" src={funStars} alt="Kid friendly stars graphic" />
     <h1>HR for Kids</h1>
-    <p>Sign in and start your mission</p>
+    <p class="subtitle">Team up, finish chores, unlock cool rewards.</p>
     <form on:submit|preventDefault={login}>
       <label>Username <input bind:value={loginUsername} required /></label>
       <label>Password <input type="password" bind:value={loginPassword} required /></label>
-      <button type="submit">Login</button>
+      <button type="submit">Launch Mission</button>
     </form>
     {#if error}<p class="error">{error}</p>{/if}
   </main>
@@ -194,7 +225,7 @@
     <header>
       <div>
         <h1>HR for Kids</h1>
-        <p>{user.display_name} ({user.role})</p>
+        <p class="subtitle">{user.display_name} ({user.role})</p>
       </div>
       <div class="actions">
         <button on:click={loadData}>Refresh</button>
@@ -217,10 +248,27 @@
     {#if error}<p class="error">{error}</p>{/if}
 
     {#if activeTab === 'dashboard'}
-      <section class="card">
-        <h2>Points</h2>
-        <p class="metric">{ledgerTotal}</p>
+      <section class="card highlight">
+        <div class="visual-row">
+          <div>
+            <h2>Points</h2>
+            <p class="metric">{ledgerTotal}</p>
+          </div>
+          <img class="mini-graphic sticker-float" src={funStars} alt="Stars" />
+        </div>
       </section>
+
+      {#if user.role !== 'CHILD'}
+      <section class="card">
+        <h2>View Child Ledger</h2>
+        <select bind:value={selectedLedgerUser} on:change={refreshLedger}>
+          {#each children as child}
+            <option value={String(child.id)}>{child.display_name}</option>
+          {/each}
+        </select>
+      </section>
+      {/if}
+
       <section class="card">
         <h2>Ledger (latest)</h2>
         <ul>
@@ -334,7 +382,7 @@
               <td>
                 {#if user.role !== 'CHILD' && rd.status === 'REQUESTED'}
                   <button on:click={() => approveRedemption(rd.id)}>Approve</button>
-                  <button on:click={() => denyRedemption(rd.id)}>Deny</button>
+                  <button class="muted" on:click={() => denyRedemption(rd.id)}>Deny</button>
                 {/if}
               </td>
             </tr>
@@ -357,7 +405,7 @@
               <td>{c.status}</td>
               <td>
                 <button on:click={() => approveChore(c.id)}>Approve</button>
-                <button on:click={() => rejectChore(c.id)}>Reject</button>
+                <button class="muted" on:click={() => rejectChore(c.id)}>Reject</button>
               </td>
             </tr>
           {/each}
@@ -390,21 +438,86 @@
 <style>
   :global(body) {
     margin: 0;
-    font-family: 'Trebuchet MS', 'Segoe UI', sans-serif;
-    background: linear-gradient(180deg, #f6fbff, #e9f4ff);
-    color: #1d2b3a;
+    font-family: 'Comic Sans MS', 'Trebuchet MS', 'Segoe UI', sans-serif;
+    background: radial-gradient(circle at 20% 20%, #ffe2a8, #ffd3c7 35%, #c9edff 70%, #a9dbff 100%);
+    color: #1a2a3e;
+    min-height: 100vh;
   }
-  .shell { max-width: 1080px; margin: 0 auto; padding: 24px; }
-  .auth { max-width: 400px; }
+  .scene-bg {
+    position: fixed;
+    inset: 0;
+    z-index: -1;
+    overflow: hidden;
+    pointer-events: none;
+  }
+  .blob {
+    position: absolute;
+    border-radius: 50%;
+    filter: blur(2px);
+    opacity: 0.5;
+  }
+  .blob.one { width: 320px; height: 320px; left: -90px; top: -60px; background: #ffd166; }
+  .blob.two { width: 360px; height: 360px; right: -110px; top: 80px; background: #7edca2; }
+  .blob.three { width: 280px; height: 280px; left: 35%; bottom: -120px; background: #82c7ff; }
+
+  .shell {
+    max-width: 1080px;
+    margin: 0 auto;
+    padding: 24px;
+  }
+  .auth {
+    max-width: 450px;
+    margin-top: 32px;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 20px;
+    backdrop-filter: blur(6px);
+    box-shadow: 0 18px 32px rgba(17, 46, 77, 0.18);
+  }
+  .subtitle {
+    margin-top: -8px;
+    color: #3c5875;
+    font-weight: 700;
+  }
   .hero {
     width: 100%;
     border-radius: 16px;
     margin-bottom: 12px;
   }
-  header { display: flex; justify-content: space-between; align-items: center; }
-  .tabs { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
-  .tabs button.active { background: #1366d6; color: #fff; }
-  .card { background: #fff; border-radius: 12px; padding: 16px; margin: 12px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: rgba(255, 255, 255, 0.75);
+    border-radius: 16px;
+    padding: 12px 16px;
+    box-shadow: 0 10px 26px rgba(17, 46, 77, 0.12);
+  }
+  .tabs {
+    display: flex;
+    gap: 8px;
+    margin: 16px 0;
+    flex-wrap: wrap;
+  }
+  .tabs button {
+    background: #ff9f43;
+    color: #1a2a3e;
+    font-weight: 700;
+  }
+  .tabs button.active {
+    background: #1366d6;
+    color: #fff;
+  }
+  .card {
+    background: rgba(255, 255, 255, 0.85);
+    border-radius: 16px;
+    padding: 16px;
+    margin: 12px 0;
+    box-shadow: 0 12px 26px rgba(20, 46, 72, 0.14);
+    border: 2px solid rgba(255, 255, 255, 0.5);
+  }
+  .highlight {
+    background: linear-gradient(135deg, rgba(255,255,255,0.95), rgba(255, 248, 224, 0.95));
+  }
   .visual-row {
     display: flex;
     align-items: center;
@@ -415,25 +528,81 @@
     height: 90px;
     object-fit: contain;
   }
-  .grid { display: grid; gap: 10px; }
-  table { width: 100%; border-collapse: collapse; }
-  th, td { text-align: left; border-bottom: 1px solid #e7eef7; padding: 8px; font-size: 14px; }
-  fieldset { border: 1px solid #d5e3f3; border-radius: 8px; padding: 8px; }
-  .metric { font-size: 36px; font-weight: 700; margin: 0; }
-  .error { color: #b42318; font-weight: 600; }
-  .actions { display: flex; gap: 8px; }
+  .grid {
+    display: grid;
+    gap: 10px;
+  }
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    border-radius: 12px;
+    overflow: hidden;
+  }
+  th {
+    background: #e8f5ff;
+    color: #24486f;
+  }
+  th, td {
+    text-align: left;
+    border-bottom: 1px solid #dbe9f8;
+    padding: 8px;
+    font-size: 14px;
+  }
+  fieldset {
+    border: 1px solid #bdd5f0;
+    border-radius: 8px;
+    padding: 8px;
+    background: #f7fbff;
+  }
+  .metric {
+    font-size: 44px;
+    line-height: 1;
+    font-weight: 900;
+    margin: 0;
+    color: #1366d6;
+  }
+  .error {
+    color: #a51515;
+    background: #ffe9e9;
+    padding: 10px 12px;
+    border-radius: 10px;
+    font-weight: 700;
+  }
+  .actions {
+    display: flex;
+    gap: 8px;
+  }
   .sticker-float {
     animation: floaty 3s ease-in-out infinite;
   }
   .sticker-bounce {
     animation: bouncy 1.8s ease-in-out infinite;
   }
-  button { border: 0; background: #1f7aeb; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
-  input, select { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #c6d9ef; border-radius: 8px; }
+  button {
+    border: 0;
+    background: #1f7aeb;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 10px;
+    cursor: pointer;
+    font-weight: 700;
+  }
+  button.muted {
+    background: #6a8bab;
+  }
+  input, select {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 8px;
+    border: 1px solid #a8c9ea;
+    border-radius: 10px;
+    background: #fff;
+  }
   @media (max-width: 720px) {
     .shell { padding: 12px; }
     th, td { font-size: 12px; }
     .mini-graphic { width: 64px; height: 64px; }
+    header { flex-direction: column; align-items: flex-start; gap: 8px; }
   }
   @keyframes floaty {
     0% { transform: translateY(0px); }
