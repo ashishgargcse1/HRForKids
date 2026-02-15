@@ -88,6 +88,28 @@ export APP_SECRET=local-dev-secret
 uvicorn app.main:app --host 0.0.0.0 --port 8080
 ```
 
+## Svelte UI
+The project now includes a Svelte frontend in `frontend/`.
+
+### Frontend dev mode
+```bash
+cd frontend
+npm install
+npm run dev
+```
+Vite runs on `http://localhost:5173` and proxies API requests to FastAPI on `http://127.0.0.1:8080`.
+
+### Build Svelte for FastAPI serving
+```bash
+cd frontend
+npm install
+npm run build
+```
+Then start FastAPI and open:
+- `http://<host>:8080/ui`
+
+If `frontend/dist` exists, `/` redirects to `/ui`.
+
 ## Raspberry Pi (Standalone Linux Service)
 This repository now includes native Raspberry Pi deployment scripts (no Docker required).
 

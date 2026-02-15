@@ -1,10 +1,11 @@
 from __future__ import annotations
 
 import os
+from pathlib import Path
 from typing import Any
 
 from fastapi import FastAPI, Form, HTTPException, Request
-from fastapi.responses import JSONResponse, RedirectResponse
+from fastapi.responses import FileResponse, JSONResponse, RedirectResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.templating import Jinja2Templates
 from starlette.middleware.sessions import SessionMiddleware
@@ -39,11 +40,15 @@ from app.services.core import (
 
 APP_PORT = int(os.getenv("APP_PORT", "8080"))
 APP_SECRET = os.getenv("APP_SECRET", "dev-secret-change-me")
+FRONTEND_DIST = Path(__file__).resolve().parents[1] / "frontend" / "dist"
+FRONTEND_INDEX = FRONTEND_DIST / "index.html"
 
 app = FastAPI(title="Healthy Routine for Kids")
 app.add_middleware(SessionMiddleware, secret_key=APP_SECRET, same_site="lax")
 app.mount("/static", StaticFiles(directory="app/static"), name="static")
 templates = Jinja2Templates(directory="app/templates")
+if (FRONTEND_DIST / "assets").exists():
+    app.mount("/ui/assets", StaticFiles(directory=str(FRONTEND_DIST / "assets")), name="ui-assets")
 
 
 @app.on_event("startup")
@@ -149,9 +154,29 @@ def health():
 
 @app.get("/")
 def root(request: Request):
+    if FRONTEND_INDEX.exists():
+        return RedirectResponse("/ui", status_code=302)
     if _current_user(request):
         return RedirectResponse("/dashboard", status_code=302)
     return RedirectResponse("/login", status_code=302)
+
+
+@app.get("/ui")
+def ui_root():
+    if not FRONTEND_INDEX.exists():
+        raise HTTPException(status_code=404, detail="Svelte UI not built. Run 'cd frontend && npm install && npm run build'.")
+    return FileResponse(str(FRONTEND_INDEX))
+
+
+@app.get("/ui/{path:path}")
+def ui_paths(path: str):
+    if not FRONTEND_INDEX.exists():
+        raise HTTPException(status_code=404, detail="Svelte UI not built. Run 'cd frontend && npm install && npm run build'.")
+    if path.startswith("assets/"):
+        asset = FRONTEND_DIST / path
+        if asset.exists():
+            return FileResponse(str(asset))
+    return FileResponse(str(FRONTEND_INDEX))
 
 
 @app.get("/login")
@@ -493,6 +518,13 @@ def api_users_list(request: Request):
     _require_roles(request, {ROLE_ADMIN})
     conn = request.state.conn
     return list_users(conn)
+
+
+@app.get("/api/children")
+def api_children_list(request: Request):
+    _require_roles(request, {ROLE_PARENT, ROLE_ADMIN})
+    conn = request.state.conn
+    return [u for u in list_users(conn) if u["role"] == ROLE_CHILD and u["is_active"]]
 
 
 @app.post("/api/users", status_code=201)
