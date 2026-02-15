@@ -729,6 +729,14 @@ def api_ledger(request: Request, user_id: int | None = None):
         raise HTTPException(status_code=403, detail="Not allowed")
 
     if actor["role"] in {ROLE_PARENT, ROLE_ADMIN}:
+        # Parent/Admin UI may request ledger before selecting a child.
+        # Fall back to first active child to avoid a hard 400 on initial load.
+        if user_id is None:
+            child = next((u for u in list_users(conn) if u["role"] == ROLE_CHILD and u["is_active"]), None)
+            if child:
+                target_user_id = child["id"]
+            else:
+                return {"user_id": None, "total": 0, "entries": []}
         target = get_user(conn, target_user_id)
         if not target or target["role"] != ROLE_CHILD:
             raise HTTPException(status_code=400, detail="user_id must be a CHILD")
