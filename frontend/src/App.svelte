@@ -1,6 +1,9 @@
 <script>
   import { onMount } from 'svelte';
   import { api } from './api';
+  import funStars from './assets/fun-stars.svg';
+  import choreRocket from './assets/chore-rocket.svg';
+  import rewardCastle from './assets/reward-castle.svg';
 
   let loading = true;
   let user = null;
@@ -176,8 +179,9 @@
   <main class="shell"><p>Loading...</p></main>
 {:else if !user}
   <main class="shell auth">
+    <img class="hero sticker-float" src={funStars} alt="Kid friendly stars graphic" />
     <h1>HR for Kids</h1>
-    <p>Sign in</p>
+    <p>Sign in and start your mission</p>
     <form on:submit|preventDefault={login}>
       <label>Username <input bind:value={loginUsername} required /></label>
       <label>Password <input type="password" bind:value={loginPassword} required /></label>
@@ -256,7 +260,10 @@
       {/if}
 
       <section class="card">
-        <h2>Chores</h2>
+        <div class="visual-row">
+          <h2>Chores</h2>
+          <img class="mini-graphic sticker-bounce" src={choreRocket} alt="Rocket graphic for chores" />
+        </div>
         <table>
           <thead><tr><th>Title</th><th>Status</th><th>Due</th><th>Points</th><th></th></tr></thead>
           <tbody>
@@ -292,7 +299,10 @@
       {/if}
 
       <section class="card">
-        <h2>Rewards</h2>
+        <div class="visual-row">
+          <h2>Rewards</h2>
+          <img class="mini-graphic sticker-float" src={rewardCastle} alt="Castle graphic for rewards" />
+        </div>
         <table>
           <thead><tr><th>Name</th><th>Cost</th><th></th></tr></thead>
           <tbody>
@@ -386,10 +396,25 @@
   }
   .shell { max-width: 1080px; margin: 0 auto; padding: 24px; }
   .auth { max-width: 400px; }
+  .hero {
+    width: 100%;
+    border-radius: 16px;
+    margin-bottom: 12px;
+  }
   header { display: flex; justify-content: space-between; align-items: center; }
   .tabs { display: flex; gap: 8px; margin: 16px 0; flex-wrap: wrap; }
   .tabs button.active { background: #1366d6; color: #fff; }
   .card { background: #fff; border-radius: 12px; padding: 16px; margin: 12px 0; box-shadow: 0 8px 24px rgba(0,0,0,0.08); }
+  .visual-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+  .mini-graphic {
+    width: 90px;
+    height: 90px;
+    object-fit: contain;
+  }
   .grid { display: grid; gap: 10px; }
   table { width: 100%; border-collapse: collapse; }
   th, td { text-align: left; border-bottom: 1px solid #e7eef7; padding: 8px; font-size: 14px; }
@@ -397,10 +422,28 @@
   .metric { font-size: 36px; font-weight: 700; margin: 0; }
   .error { color: #b42318; font-weight: 600; }
   .actions { display: flex; gap: 8px; }
+  .sticker-float {
+    animation: floaty 3s ease-in-out infinite;
+  }
+  .sticker-bounce {
+    animation: bouncy 1.8s ease-in-out infinite;
+  }
   button { border: 0; background: #1f7aeb; color: white; padding: 8px 12px; border-radius: 8px; cursor: pointer; }
   input, select { width: 100%; box-sizing: border-box; padding: 8px; border: 1px solid #c6d9ef; border-radius: 8px; }
   @media (max-width: 720px) {
     .shell { padding: 12px; }
     th, td { font-size: 12px; }
+    .mini-graphic { width: 64px; height: 64px; }
+  }
+  @keyframes floaty {
+    0% { transform: translateY(0px); }
+    50% { transform: translateY(-8px); }
+    100% { transform: translateY(0px); }
+  }
+  @keyframes bouncy {
+    0% { transform: translateY(0) scale(1); }
+    30% { transform: translateY(-10px) scale(1.03); }
+    60% { transform: translateY(0) scale(0.98); }
+    100% { transform: translateY(0) scale(1); }
   }
 </style>

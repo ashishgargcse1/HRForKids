@@ -1,0 +1,11 @@
+<svg width="360" height="220" viewBox="0 0 360 220" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect width="360" height="220" rx="24" fill="#E6F5FF"/>
+  <circle cx="62" cy="52" r="18" fill="#FFD166"/>
+  <circle cx="298" cy="44" r="14" fill="#F7B267"/>
+  <circle cx="284" cy="168" r="22" fill="#8FD3FF"/>
+  <path d="M167 42L176 61H197L180 73L186 93L167 82L148 93L154 73L137 61H158L167 42Z" fill="#FFD166"/>
+  <path d="M78 110L85 124H101L88 132L93 146L78 138L63 146L68 132L55 124H71L78 110Z" fill="#FF9F9F"/>
+  <path d="M246 86L252 98H265L254 106L258 118L246 111L234 118L238 106L227 98H240L246 86Z" fill="#7EDCA2"/>
+  <rect x="94" y="144" width="170" height="40" rx="20" fill="white"/>
+  <text x="179" y="170" text-anchor="middle" fill="#1F4B7A" font-family="Arial, sans-serif" font-size="16" font-weight="700">Let&apos;s do chores!</text>
+</svg>
